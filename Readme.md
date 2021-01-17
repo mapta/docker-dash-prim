@@ -1,6 +1,6 @@
 # About
 
-This is a simple demo for a [Dash](https://plotly.com/dash/) application deployed as a web app from a Docker image on Azure. 
+This is a simple demo for a [Dash](https://plotly.com/dash/) application deployed as a web app from a Docker image on Azure. The app displays the prime number distribution in an interactive [Plotly Express](https://plotly.com/python/plotly-express/) chart.
 
 The deployment is automated with the Azure command line tools (CLI). A new resource group is created and the following resources are deployed:
 1. [Azure Container Registry](https://azure.microsoft.com/en-us/services/container-registry/)
