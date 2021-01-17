@@ -1,0 +1,11 @@
+
+# Variables
+resourceGroupName=docker-dash-prim
+location=westeurope
+containerRegistryName=ddprimcr
+appPlanName=ddprimplan
+webAppName=docker-dash-prim
+imageName=app
+whName=ddprimwh
+
+az acr build --registry $containerRegistryName --resource-group $resourceGroupName --image $imageName .

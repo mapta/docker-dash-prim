@@ -1,0 +1,38 @@
+# Variables
+resourceGroupName=docker-dash-prim
+location=westeurope
+containerRegistryName=ddprimcr
+appPlanName=ddprimplan
+webAppName=docker-dash-prim
+imageName=app
+whName=ddprimwh
+
+# Azure Resource Group
+az group create --name $resourceGroupName --location $location
+
+# Container Registry
+az acr create --name $containerRegistryName --resource-group $resourceGroupName --location $location --sku Basic --admin-enabled true
+
+# App Service Plan
+az appservice plan create --resource-group $resourceGroupName --name $appPlanName --location $location --is-linux --sku B1
+
+# Create web app from docker image
+az webapp create --name $webAppName --resource-group $resourceGroupName -p $appPlanName --deployment-container-image-name  $containerRegistryName.azurecr.io/app:latest
+az webapp config container set --docker-registry-server-url https://$containerRegistryName.azurecr.io --name $webAppName --resource-group $resourceGroupName
+
+# Use system-assigned identity
+az webapp identity assign --resource-group $resourceGroupName --name $webAppName
+# Grant web app access to container registry
+spID=$(az webapp show --resource-group $resourceGroupName --name $webAppName --query identity.principalId --out tsv)
+resourceID=$(az acr show --resource-group $resourceGroupName --name $containerRegistryName --query id --output tsv)
+az role assignment create --assignee $spID --scope $resourceID --role acrpull
+
+# Enable continuous deployment
+az webapp deployment container config --enable-cd true --name $webAppName --resource-group $resourceGroupName
+# Create a webhook to push changes in the registry to the web app
+whURI_JSON=$(az webapp deployment container show-cd-url --name $webAppName --resource-group $resourceGroupName --output json)
+whURI=$(jq -r '.CI_CD_URL' <<< ${whURI_JSON})
+az acr webhook create -r $containerRegistryName -n $whName --actions push --scope $imageName:latest --uri $whURI
+
+# Build and register the Docker container
+az acr build --registry $containerRegistryName --resource-group $resourceGroupName --image $imageName .
